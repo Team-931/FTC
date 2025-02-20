@@ -22,7 +22,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 @TeleOp(name = "Competition Telee", group = "")
 public class CompetitionTelee288 extends LinearOpMode {
-    private DigitalChannel limitSwitch;
+    //private DigitalChannel limitSwitch;
 
 
 
@@ -43,14 +43,43 @@ public class CompetitionTelee288 extends LinearOpMode {
 
         imu = hardwareMap.get(IMU.class, "imu");
 
+        private SwerveDriveWheel LFWheel = new SwerveDriveWheel(
+                telemetry,
+                "LF",
+                hardwareMap.dcMotor.get("LFDrive"),
+                hardwareMap.crservo.get("LFSteer"),
+                hardwareMap.analogInput.get("LFsteer")
+        ),
+        LRWheel = new SwerveDriveWheel(
+                telemetry,
+                "LR",
+                hardwareMap.dcMotor.get("LRDrive"),
+                hardwareMap.crservo.get("LRSteer"),
+                hardwareMap.analogInput.get("LRsteer")
+        ),
+        RFWheel = new SwerveDriveWheel(
+                telemetry,
+                "RF",
+                hardwareMap.dcMotor.get("RFDrive"),
+                hardwareMap.crservo.get("RFSteer"),
+                hardwareMap.analogInput.get("RFsteer")
+        ),
+        RRWheel = new SwerveDriveWheel(
+                telemetry,
+                "RR",
+                hardwareMap.dcMotor.get("RRDrive"),
+                hardwareMap.crservo.get("RRSteer"),
+                hardwareMap.analogInput.get("RRsteer")
+        );
+        private SwerveDriveCoordinator SwerveDrive = new SwerveDriveCoordinator(telemetry, LFWheel, LRWheel, RFWheel, RRWheel);
 
-        driveController mechDrive = new driveController(telemetry, hardwareMap);
+        //driveController mechDrive = new driveController(telemetry, hardwareMap);
         scoringController robotScoring = new scoringController(telemetry, hardwareMap);
 
         // Put initialization blocks here.
         telemetry.addData("Status", "Waiting for Start");
         telemetry.update();
-        waitForStart();
+        waitForStart(); // should this be just before while (opmodeactive) ?
 
         // IMU parameters and initialization
         IMU.Parameters imuParams = new IMU.Parameters(
@@ -96,17 +125,12 @@ public class CompetitionTelee288 extends LinearOpMode {
             double movementX = joystickMovementX * cos(toRadians(theta)) - joystickMovementY * sin(toRadians(theta));
             double movementY = joystickMovementX * sin(toRadians(theta)) + joystickMovementY * cos(toRadians(theta));
 
-            if (gamepad1.left_trigger > 0.000) {
+            if (gamepad1.left_trigger >= 0.001) {
                 movementX = movementX * 0.45;
                 movementY = movementY * 0.45;
                 yaw = yaw * 0.45;
             }
-            if (gamepad1.left_trigger > 0.000 && gamepad1.left_trigger < 0.001) {
-                movementX = movementX / 0.45;
-                movementY = movementY / 0.45;
-                yaw = yaw / 0.45;
-            }
-
+            /*
             double leftFrontPower = (movementY + movementX + yaw);
             double rightFrontPower = (movementY - movementX - yaw);
             double leftBackPower = (movementY - movementX + yaw);
@@ -124,7 +148,7 @@ public class CompetitionTelee288 extends LinearOpMode {
 
             }
             mechDrive.drive(leftFrontPower, rightFrontPower, leftBackPower, rightBackPower);
-
+*/          SwerveDrive.drive(movementX, movementY, yaw);
 
             //Robot Scoring control
             double liftControl = -inputScaling(currentGamepad2.left_stick_y);
