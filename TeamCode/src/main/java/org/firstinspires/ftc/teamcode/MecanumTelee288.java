@@ -12,16 +12,14 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 // Recommended reading: https://compendium.readthedocs.io/en/latest/tasks/drivetrains/swerve.html
 // I'm illiterate
 
 @TeleOp(name = "Competition Telee", group = "")
-public class CompetitionTelee288 extends LinearOpMode {
+public class MecanumTelee288 extends LinearOpMode {
     private DigitalChannel limitSwitch;
 
 
@@ -89,7 +87,7 @@ public class CompetitionTelee288 extends LinearOpMode {
             double yaw = (inputScaling(gamepad1.right_stick_x) * JOYSTICK_ROTATION_SENSITIVITY) * 0.75;
 
             //get robot orientation from imu
-            double robotHeading = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//TODO: check //pih: assume it's clockwise
+            double robotHeading = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
             //input movement values into vector translation in 2d theorem
             double theta = -robotHeading;
