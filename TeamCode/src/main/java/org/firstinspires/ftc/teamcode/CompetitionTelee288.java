@@ -7,15 +7,12 @@ import static java.lang.Math.toRadians;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 // Recommended reading: https://compendium.readthedocs.io/en/latest/tasks/drivetrains/swerve.html
 // I'm illiterate
@@ -29,7 +26,7 @@ public class CompetitionTelee288 extends LinearOpMode {
 
     final double JOYSTICK_DEAD_ZONE = 0.20;
     final double JOYSTICK_MOVEMENT_SENSITIVITY = 0.75;
-    final double JOYSTICK_ROTATION_SENSITIVITY = 1.00;
+    final double JOYSTICK_ROTATION_SENSITIVITY = 0.5;
 
 
     IMU imu;
@@ -100,7 +97,7 @@ public class CompetitionTelee288 extends LinearOpMode {
 
         // Put run blocks here.
 
-        double oldHeading= 0;
+        double offsetHeading = 0, oldHeading = 0;
         while (opModeIsActive()) {
             // Update sampled gamepad states. Sampling the current gamepad state as 'currentGamepadN'
             // is necessary for reliable edge triggering on button presses.
@@ -111,20 +108,29 @@ public class CompetitionTelee288 extends LinearOpMode {
 
             if (gamepad1.right_trigger > 0) {
                 telemetry.addData("info","resetting imu orientation");
-                imu.initialize(imuParams);
+                //imu.initialize(imuParams);
+                imu.resetYaw();
+                offsetHeading = 0; oldHeading = 0;
             }
 
             double joystickMovementY = inputScaling(gamepad1.left_stick_y) * JOYSTICK_MOVEMENT_SENSITIVITY;  // Note: pushing stick forward gives negative value
             double joystickMovementX = inputScaling(-gamepad1.left_stick_x) * JOYSTICK_MOVEMENT_SENSITIVITY;
-            double yaw = (inputScaling(-gamepad1.right_stick_x) * JOYSTICK_ROTATION_SENSITIVITY) * 0.75;
+            double yaw = (inputScaling(-gamepad1.right_stick_x) * JOYSTICK_ROTATION_SENSITIVITY);
 
             //get robot orientation from imu
-            double robotHeading = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//TODO: check //pih: assume it's clockwise
-            if (Double.isNaN(robotHeading)) robotHeading = oldHeading;
+
+            double robotHeading = offsetHeading +
+                    imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//pih: assume it's clockwise
+            telemetry.addData("Heading", robotHeading);
+            if (Double.isNaN(robotHeading)) {
+                while(! imu.initialize(imuParams));
+                imu.resetYaw();
+                offsetHeading = oldHeading;
+            }
             else oldHeading = robotHeading;//TODO: test this fix
 
             //input movement values into vector translation in 2d theorem
-            double theta = -robotHeading;
+            double theta = -oldHeading;
             double movementX = joystickMovementX * cos(toRadians(theta)) - joystickMovementY * sin(toRadians(theta));
             double movementY = joystickMovementX * sin(toRadians(theta)) + joystickMovementY * cos(toRadians(theta));
 
@@ -133,25 +139,8 @@ public class CompetitionTelee288 extends LinearOpMode {
                 movementY = movementY * 0.45;
                 yaw = yaw * 0.45;
             }
-            /*
-            double leftFrontPower = (movementY + movementX + yaw);
-            double rightFrontPower = (movementY - movementX - yaw);
-            double leftBackPower = (movementY - movementX + yaw);
-            double rightBackPower = (movementY + movementX - yaw);
 
-            //normalize power variables to prevent motor power from exceeding 1.0
-            double maxPower = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
-            maxPower = Math.max(maxPower, Math.abs(leftBackPower));
-            maxPower = Math.max(maxPower, Math.abs(rightBackPower));
-            if (maxPower > 1.0) {
-                leftFrontPower /= maxPower;
-                rightFrontPower /= maxPower;
-                leftBackPower /= maxPower;
-                rightBackPower /= maxPower;
-
-            }
-            mechDrive.drive(leftFrontPower, rightFrontPower, leftBackPower, rightBackPower);
-*/          SwerveDrive.drive(movementX, movementY, yaw);
+            SwerveDrive.drive(movementX, movementY, yaw);
 
             //Robot Scoring control
             double liftControl = -inputScaling(currentGamepad2.left_stick_y);
