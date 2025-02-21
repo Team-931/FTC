@@ -43,7 +43,7 @@ public class CompetitionTelee288 extends LinearOpMode {
 
         imu = hardwareMap.get(IMU.class, "imu");
 
-        private SwerveDriveWheel LFWheel = new SwerveDriveWheel(
+        SwerveDriveWheel LFWheel = new SwerveDriveWheel(
                 telemetry,
                 "LF",
                 hardwareMap.dcMotor.get("LFDrive"),
@@ -71,7 +71,7 @@ public class CompetitionTelee288 extends LinearOpMode {
                 hardwareMap.crservo.get("RRSteer"),
                 hardwareMap.analogInput.get("RRsteer")
         );
-        private SwerveDriveCoordinator SwerveDrive = new SwerveDriveCoordinator(telemetry, LFWheel, LRWheel, RFWheel, RRWheel);
+        SwerveDriveCoordinator SwerveDrive = new SwerveDriveCoordinator(telemetry, LFWheel, LRWheel, RFWheel, RRWheel);
 
         //driveController mechDrive = new driveController(telemetry, hardwareMap);
         scoringController robotScoring = new scoringController(telemetry, hardwareMap);
@@ -100,6 +100,7 @@ public class CompetitionTelee288 extends LinearOpMode {
 
         // Put run blocks here.
 
+        double oldHeading= 0;
         while (opModeIsActive()) {
             // Update sampled gamepad states. Sampling the current gamepad state as 'currentGamepadN'
             // is necessary for reliable edge triggering on button presses.
@@ -113,12 +114,14 @@ public class CompetitionTelee288 extends LinearOpMode {
                 imu.initialize(imuParams);
             }
 
-            double joystickMovementY = inputScaling(-gamepad1.left_stick_y) * JOYSTICK_MOVEMENT_SENSITIVITY;  // Note: pushing stick forward gives negative value
-            double joystickMovementX = inputScaling(gamepad1.left_stick_x) * JOYSTICK_MOVEMENT_SENSITIVITY;
-            double yaw = (inputScaling(gamepad1.right_stick_x) * JOYSTICK_ROTATION_SENSITIVITY) * 0.75;
+            double joystickMovementY = inputScaling(gamepad1.left_stick_y) * JOYSTICK_MOVEMENT_SENSITIVITY;  // Note: pushing stick forward gives negative value
+            double joystickMovementX = inputScaling(-gamepad1.left_stick_x) * JOYSTICK_MOVEMENT_SENSITIVITY;
+            double yaw = (inputScaling(-gamepad1.right_stick_x) * JOYSTICK_ROTATION_SENSITIVITY) * 0.75;
 
             //get robot orientation from imu
             double robotHeading = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//TODO: check //pih: assume it's clockwise
+            if (Double.isNaN(robotHeading)) robotHeading = oldHeading;
+            else oldHeading = robotHeading;//TODO: test this fix
 
             //input movement values into vector translation in 2d theorem
             double theta = -robotHeading;

@@ -17,7 +17,7 @@ public class LimelightTest extends LinearOpMode {
 
 
     public LimelightTest() {
-       limelight = new Limelight3A(0, "limelight", ) //TODO collect params for LimeLight3A from Docs
+       //limelight = new Limelight3A(0, "limelight", ) //TODO collect params for LimeLight3A from Docs
     }
     public void colorChange(int input) {
         limelight.pipelineSwitch(input);

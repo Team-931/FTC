@@ -18,7 +18,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 // Recommended reading: https://compendium.readthedocs.io/en/latest/tasks/drivetrains/swerve.html
 // I'm illiterate
 
-@TeleOp(name = "Competition Telee", group = "")
+@TeleOp(name = "Mecanum Telee", group = "")
 public class MecanumTelee288 extends LinearOpMode {
     private DigitalChannel limitSwitch;
 
