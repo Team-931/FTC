@@ -2,7 +2,9 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.PwmControl;
 
 public class SwerveDriveWheel {
     private String Name; // Name, used for logging and telemetry
@@ -25,7 +27,9 @@ public class SwerveDriveWheel {
 
     public void drive(double targetAngle, double motorPower) {
         double currentAngle = (AngleSensor.getVoltage() / 3.3) * 360 * -1; // Flip direction so clockwise is positive (with zero being forward)
-        if (motorPower != 0) {
+
+        if (motorPower == 0) /*AngleServo.setPower(0);*/((PwmControl)AngleServo).setPwmDisable();
+        else {
             double angleError = targetAngle - currentAngle;
             // Compute the shortest path rather than the naive difference.
             while (angleError < 0) { angleError += 360; }
@@ -42,8 +46,9 @@ public class SwerveDriveWheel {
                 servoPower = 0;
             }
             AngleServo.setPower(servoPower);
+
         }
-        else AngleServo.setPower(0);
+
 
         Telemetry.addData(Name + " Angle", currentAngle);
         Telemetry.addData(Name + " Power", motorPower);
