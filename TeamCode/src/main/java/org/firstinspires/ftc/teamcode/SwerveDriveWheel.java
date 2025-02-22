@@ -25,22 +25,25 @@ public class SwerveDriveWheel {
 
     public void drive(double targetAngle, double motorPower) {
         double currentAngle = (AngleSensor.getVoltage() / 3.3) * 360 * -1; // Flip direction so clockwise is positive (with zero being forward)
-        double angleError = targetAngle - currentAngle;
-        // Compute the shortest path rather than the naive difference.
-        while (angleError < 0) { angleError += 360; }
-        angleError = ((angleError + 180) % 360) - 180;
-        // If driving the wheel backwards would be faster than spinning it around, do that.
-        if (angleError > 90) { angleError -= 180; motorPower *= -1; }
-        if (angleError < -90) { angleError += 180; motorPower *= -1; }
+        if (motorPower != 0) {
+            double angleError = targetAngle - currentAngle;
+            // Compute the shortest path rather than the naive difference.
+            while (angleError < 0) { angleError += 360; }
+            angleError = ((angleError + 180) % 360) - 180;
+            // If driving the wheel backwards would be faster than spinning it around, do that.
+            if (angleError > 90) { angleError -= 180; motorPower *= -1; }
+            if (angleError < -90) { angleError += 180; motorPower *= -1; }
 
-        // Drive the servo. Do nothing if the angle error is small enough.
-        double servoPower = angleError * ERROR_TO_SERVO_POWER;
-        servoPower = Math.min(servoPower, MAXIMUM_SERVO_POWER);
-        servoPower = Math.max(servoPower, -MAXIMUM_SERVO_POWER);
-        if (Math.abs(angleError) < ANGLE_ERROR_TOLERANCE) {
-            servoPower = 0;
+            // Drive the servo. Do nothing if the angle error is small enough.
+            double servoPower = angleError * ERROR_TO_SERVO_POWER;
+            servoPower = Math.min(servoPower, MAXIMUM_SERVO_POWER);
+            servoPower = Math.max(servoPower, -MAXIMUM_SERVO_POWER);
+            if (Math.abs(angleError) < ANGLE_ERROR_TOLERANCE) {
+                servoPower = 0;
+            }
+            AngleServo.setPower(servoPower);
         }
-        AngleServo.setPower(servoPower);
+        else AngleServo.setPower(0);
 
         Telemetry.addData(Name + " Angle", currentAngle);
         Telemetry.addData(Name + " Power", motorPower);
