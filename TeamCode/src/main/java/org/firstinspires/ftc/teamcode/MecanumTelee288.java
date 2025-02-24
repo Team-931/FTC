@@ -20,7 +20,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
 @TeleOp(name = "Mecanum Telee", group = "")
 public class MecanumTelee288 extends LinearOpMode {
-    private DigitalChannel limitSwitch;
+    //private DigitalChannel limitSwitch;
 
 
 

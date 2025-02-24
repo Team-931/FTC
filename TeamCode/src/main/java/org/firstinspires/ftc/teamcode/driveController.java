@@ -20,12 +20,12 @@ public class driveController {
         leftRear = hardwareMap.get(DcMotor.class, "backLeftDriveMotor");
         rightRear = hardwareMap.get(DcMotor.class, "backRightDriveMotor");
 
-    }
-    public void drive(double leftFrontPower, double rightFrontPower, double leftRearPower, double rightRearPower){
         leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    }
+    public void drive(double leftFrontPower, double rightFrontPower, double leftRearPower, double rightRearPower){
         leftFront.setPower(leftFrontPower);
         rightFront.setPower(rightFrontPower);
         leftRear.setPower(leftRearPower);

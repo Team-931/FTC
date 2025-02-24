@@ -9,10 +9,12 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 // Recommended reading: https://compendium.readthedocs.io/en/latest/tasks/drivetrains/swerve.html
 // I'm illiterate
@@ -39,6 +41,10 @@ public class CompetitionTelee288 extends LinearOpMode {
 
 
         imu = hardwareMap.get(IMU.class, "imu");
+        YawPitchRollAngles imuOutput;
+        final VoltageSensor voltSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
+        double failureVoltage = 0;
+        int failureCt = 0;
 
         SwerveDriveWheel LFWheel = new SwerveDriveWheel(
                 telemetry,
@@ -97,8 +103,9 @@ public class CompetitionTelee288 extends LinearOpMode {
 
         // Put run blocks here.
 
-        double offsetHeading = 0, oldHeading = 0;
+        //double offsetHeading = 0, oldHeading = 0;
         while (opModeIsActive()) {
+            //boolean voltageBad = false && voltSensor.getVoltage() < 12; //TODO: adjust this limit
             // Update sampled gamepad states. Sampling the current gamepad state as 'currentGamepadN'
             // is necessary for reliable edge triggering on button presses.
             prevGamepad1.copy(currentGamepad1);
@@ -108,9 +115,9 @@ public class CompetitionTelee288 extends LinearOpMode {
 
             if (gamepad1.right_trigger > 0) {
                 telemetry.addData("info","resetting imu orientation");
-                //imu.initialize(imuParams);
+                imu.initialize(imuParams);
                 imu.resetYaw();
-                offsetHeading = 0; oldHeading = 0;
+                //offsetHeading = 0; oldHeading = 0;
             }
 
             double joystickMovementY = inputScaling(gamepad1.left_stick_y) * JOYSTICK_MOVEMENT_SENSITIVITY;  // Note: pushing stick forward gives negative value
@@ -119,18 +126,25 @@ public class CompetitionTelee288 extends LinearOpMode {
 
             //get robot orientation from imu
 
-            double robotHeading = offsetHeading +
-                    imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//pih: assume it's clockwise
-            telemetry.addData("Heading", robotHeading);
-            if (Double.isNaN(robotHeading)) {
-                while(! imu.initialize(imuParams));
-                imu.resetYaw();
-                offsetHeading = oldHeading;
+            imuOutput = imu.getRobotYawPitchRollAngles();
+                    //offsetHeading + imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//pih: assume it's clockwise
+            if (imuOutput.getAcquisitionTime() == 0) {
+                failureVoltage = voltSensor.getVoltage();
+                ++failureCt;
+                imu.initialize(imuParams);
+                //imu.resetYaw();
+                //offsetHeading = oldHeading;
+                while (imuOutput.getAcquisitionTime() == 0)
+                    imuOutput = imu.getRobotYawPitchRollAngles();
             }
-            else oldHeading = robotHeading;//TODO: test this fix
+            double robotHeading = imuOutput.getYaw(AngleUnit.DEGREES);
+            telemetry.addData("Heading", robotHeading);
+            telemetry.addData("Failure Voltage", failureVoltage);
+            telemetry.addData("Failure Count", failureCt);
+            //else oldHeading = robotHeading;//TODO: test this fix
 
             //input movement values into vector translation in 2d theorem
-            double theta = -oldHeading;
+            double theta = -robotHeading;
             double movementX = joystickMovementX * cos(toRadians(theta)) - joystickMovementY * sin(toRadians(theta));
             double movementY = joystickMovementX * sin(toRadians(theta)) + joystickMovementY * cos(toRadians(theta));
 
@@ -140,7 +154,8 @@ public class CompetitionTelee288 extends LinearOpMode {
                 yaw = yaw * 0.45;
             }
 
-            SwerveDrive.drive(movementX, movementY, yaw);
+            /*if(! voltageBad)*/ SwerveDrive.drive(movementX, movementY, yaw);
+            //else SwerveDrive.drive(0, 0, 0);
 
             //Robot Scoring control
             double liftControl = -inputScaling(currentGamepad2.left_stick_y);
