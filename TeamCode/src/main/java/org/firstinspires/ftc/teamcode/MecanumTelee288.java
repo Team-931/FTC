@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -38,7 +39,7 @@ public class MecanumTelee288 extends LinearOpMode {
     @Override
     public void runOpMode() {
 
-
+        final SparkFunOTOS otos = hardwareMap.get(SparkFunOTOS.class,"SparkFunOTOS Corrected");
         imu = hardwareMap.get(IMU.class, "imu");
 
 
