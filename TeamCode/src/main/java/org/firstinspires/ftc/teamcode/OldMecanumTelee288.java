@@ -4,25 +4,22 @@ import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static java.lang.Math.toRadians;
 
-import com.pedropathing.follower.Follower;
-import com.pedropathing.localization.Pose;
-import com.pedropathing.util.Constants;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.teamcode.pedroPathing.constants.FConstants;
-import org.firstinspires.ftc.teamcode.pedroPathing.constants.LConstants;
 
 // Recommended reading: https://compendium.readthedocs.io/en/latest/tasks/drivetrains/swerve.html
 // I'm illiterate
 
 @TeleOp(name = "Mecanum Telee", group = "")
-public class MecanumTelee288 extends LinearOpMode {
+public class OldMecanumTelee288 extends LinearOpMode {
+    //private DigitalChannel limitSwitch;
 
 
 
@@ -31,10 +28,8 @@ public class MecanumTelee288 extends LinearOpMode {
     final double JOYSTICK_MOVEMENT_SENSITIVITY = 0.75;
     final double JOYSTICK_ROTATION_SENSITIVITY = 1.00;
 
-    private Follower follower;
-    private final Pose startPose = new Pose(0,0,0);
 
-
+    IMU imu;
 
     /**
      * This function is executed when this OpMode is selected from the Driver Station.
@@ -42,11 +37,10 @@ public class MecanumTelee288 extends LinearOpMode {
     @Override
     public void runOpMode() {
 
-        Constants.setConstants(FConstants.class, LConstants.class);
-        follower = new Follower(hardwareMap);
-        follower.setStartingPose(startPose);
+       imu = hardwareMap.get(IMU.class, "imu");
 
 
+        driveController mechDrive = new driveController(telemetry, hardwareMap);
         scoringController robotScoring = new scoringController(telemetry, hardwareMap);
 
         // Put initialization blocks here.
@@ -55,7 +49,15 @@ public class MecanumTelee288 extends LinearOpMode {
         waitForStart();
 
         // IMU parameters and initialization
-        follower.startTeleopDrive();
+        IMU.Parameters imuParams = new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
+                        RevHubOrientationOnRobot.UsbFacingDirection.UP
+                )
+        );
+
+        imu.initialize(imuParams);
+
 
         // Previous iteration gamepad states for edge detection
         Gamepad prevGamepad1 = new Gamepad();
@@ -75,27 +77,49 @@ public class MecanumTelee288 extends LinearOpMode {
 
             if (gamepad1.right_trigger > 0) {
                 telemetry.addData("info","resetting imu orientation");
-                follower.setHeadingOffset(0);
+                imu.initialize(imuParams);
             }
 
-            double movementY = inputScaling(-gamepad1.left_stick_y) * JOYSTICK_MOVEMENT_SENSITIVITY;  // Note: pushing stick forward gives negative value
-            double movementX = inputScaling(gamepad1.left_stick_x) * JOYSTICK_MOVEMENT_SENSITIVITY;
+            double joystickMovementY = inputScaling(-gamepad1.left_stick_y) * JOYSTICK_MOVEMENT_SENSITIVITY;  // Note: pushing stick forward gives negative value
+            double joystickMovementX = inputScaling(gamepad1.left_stick_x) * JOYSTICK_MOVEMENT_SENSITIVITY;
             double yaw = (inputScaling(gamepad1.right_stick_x) * JOYSTICK_ROTATION_SENSITIVITY) * 0.75;
 
+            //get robot orientation from imu
+            double robotHeading = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
-            if (gamepad1.left_trigger > 0.001) {
+            //input movement values into vector translation in 2d theorem
+            double theta = -robotHeading;
+            double movementX = joystickMovementX * cos(toRadians(theta)) - joystickMovementY * sin(toRadians(theta));
+            double movementY = joystickMovementX * sin(toRadians(theta)) + joystickMovementY * cos(toRadians(theta));
+
+            if (gamepad1.left_trigger > 0.000) {
                 movementX = movementX * 0.45;
                 movementY = movementY * 0.45;
                 yaw = yaw * 0.45;
             }
+            if (gamepad1.left_trigger > 0.000 && gamepad1.left_trigger < 0.001) {
+                movementX = movementX / 0.45;
+                movementY = movementY / 0.45;
+                yaw = yaw / 0.45;
+            }
 
-            follower.setTeleOpMovementVectors(movementY, -movementX, -yaw, false);
-            follower.update();
+            double leftFrontPower = (movementY + movementX + yaw);
+            double rightFrontPower = (movementY - movementX - yaw);
+            double leftBackPower = (movementY - movementX + yaw);
+            double rightBackPower = (movementY + movementX - yaw);
 
-            /* Telemetry Outputs of our Follower */
-            telemetry.addData("X", follower.getPose().getX());
-            telemetry.addData("Y", follower.getPose().getY());
-            telemetry.addData("Heading in Degrees", Math.toDegrees(follower.getPose().getHeading()));
+            //normalize power variables to prevent motor power from exceeding 1.0
+            double maxPower = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+            maxPower = Math.max(maxPower, Math.abs(leftBackPower));
+            maxPower = Math.max(maxPower, Math.abs(rightBackPower));
+            if (maxPower > 1.0) {
+                leftFrontPower /= maxPower;
+                rightFrontPower /= maxPower;
+                leftBackPower /= maxPower;
+                rightBackPower /= maxPower;
+
+            }
+            mechDrive.drive(leftFrontPower, rightFrontPower, leftBackPower, rightBackPower);
 
 
             //Robot Scoring control
@@ -136,7 +160,6 @@ public class MecanumTelee288 extends LinearOpMode {
                 robotScoring.pickupStageTwo();
             }
             robotScoring.drive(liftControl, intakeSlideControl, intakeShoulderControl, intakeWristControl, gamepad1.a);
-            /* Update Telemetry to the Driver Hub */
             telemetry.update();
         }
     }
