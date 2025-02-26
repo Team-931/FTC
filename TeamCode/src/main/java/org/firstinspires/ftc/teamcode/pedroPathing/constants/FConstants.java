@@ -10,17 +10,17 @@ public class FConstants {
     static {
         FollowerConstants.localizers = Localizers.OTOS;
 
-        FollowerConstants.leftFrontMotorName = "leftFront";
-        FollowerConstants.leftRearMotorName = "leftRear";
-        FollowerConstants.rightFrontMotorName = "rightFront";
-        FollowerConstants.rightRearMotorName = "rightRear";
+        FollowerConstants.leftFrontMotorName = "frontLeftDriveMotor";
+        FollowerConstants.leftRearMotorName = "backLeftDriveMotor";
+        FollowerConstants.rightFrontMotorName = "frontRightDriveMotor";
+        FollowerConstants.rightRearMotorName = "backRightDriveMotor";
 
-        FollowerConstants.leftFrontMotorDirection = DcMotorSimple.Direction.REVERSE;
-        FollowerConstants.leftRearMotorDirection = DcMotorSimple.Direction.REVERSE;
+        FollowerConstants.leftFrontMotorDirection = DcMotorSimple.Direction.FORWARD;
+        FollowerConstants.leftRearMotorDirection = DcMotorSimple.Direction.FORWARD;
         FollowerConstants.rightFrontMotorDirection = DcMotorSimple.Direction.FORWARD;
         FollowerConstants.rightRearMotorDirection = DcMotorSimple.Direction.FORWARD;
 
-        FollowerConstants.mass = 13;
+        FollowerConstants.mass = 15.28;
 
         FollowerConstants.xMovement = 57.8741;
         FollowerConstants.yMovement = 52.295;
