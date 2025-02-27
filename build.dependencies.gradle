@@ -18,14 +18,16 @@ dependencies {
     implementation 'org.firstinspires.ftc:FtcCommon:10.1.0'
     implementation 'org.firstinspires.ftc:Vision:10.1.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'com.pedropathing:pedro:1.0.8'
-    implementation 'com.pedropathing:ftclib:1.0.7'
+    //implementation 'com.pedropathing:pedro:1.0.8'
+    //implementation 'com.pedropathing:ftclib:1.0.7'
     implementation 'org.ftclib.ftclib:core:2.1.1'
-    implementation "com.acmerobotics.roadrunner:ftc:0.1.15"
+    //implementation "com.acmerobotics.roadrunner:ftc:0.1.15"
     implementation "com.acmerobotics.roadrunner:core:1.0.1"
     implementation "com.acmerobotics.roadrunner:actions:1.0.1"
     implementation 'com.acmerobotics.dashboard:dashboard:0.4.16'
     implementation "page.j5155.roadrunner:ftc-otos:0.1.2+0.1.14"
     implementation group: 'com.sun.net.httpserver', name: 'http', version: '20070405'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.7'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.4.21'
 }
 
