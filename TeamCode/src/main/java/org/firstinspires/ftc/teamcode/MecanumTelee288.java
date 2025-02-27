@@ -74,8 +74,8 @@ public class MecanumTelee288 extends LinearOpMode {
             currentGamepad2.copy(gamepad2);
 
             if (gamepad1.right_trigger > 0) {
-                telemetry.addData("info","resetting imu orientation");
-                follower.setHeadingOffset(0);
+                telemetry.addData("info","not resetting imu orientation");
+                //follower.setHeadingOffset(- follower.getTotalHeading());
             }
 
             double movementY = inputScaling(-gamepad1.left_stick_y) * JOYSTICK_MOVEMENT_SENSITIVITY;  // Note: pushing stick forward gives negative value
