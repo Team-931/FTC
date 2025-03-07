@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -9,6 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 // Recommended reading: https://compendium.readthedocs.io/en/latest/tasks/drivetrains/swerve.html
 
 @TeleOp(name = "Swerve Test", group = "")
+@Disabled
 public class SwerveTest extends LinearOpMode {
     private SwerveDriveWheel LFWheel, LRWheel, RFWheel, RRWheel;
     private SwerveDriveCoordinator SwerveDrive;

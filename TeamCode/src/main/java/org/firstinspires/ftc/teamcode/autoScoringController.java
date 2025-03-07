@@ -66,7 +66,7 @@ public class autoScoringController {
     private double intakeClawTarget = 0.0; // 0 = Open, 1 = Closed
     private double intakeElbowTarget = 1.0; // 1 = Inside Robot, 0 = At Floor
     private double upperClawTarget = 1.0; // 1 = Closed, 0 = Open
-    private double upperShoulderTarget = 1.0; // 1 = Towards Wall, 0 = Inside Robot
+    private double upperShoulderTarget = 0.125; // 1 = Towards Wall, 0 = Inside Robot
 
     // True while the intake pickup/handoff state machine is running
     private boolean pickupHandoffStateMachineZero = false;

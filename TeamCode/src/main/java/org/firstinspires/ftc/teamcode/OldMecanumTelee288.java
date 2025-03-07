@@ -57,7 +57,8 @@ public class OldMecanumTelee288 extends LinearOpMode {
         );
 
         imu.initialize(imuParams);
-
+        boolean useImu = true,
+        aLastPress = false;
 
         // Previous iteration gamepad states for edge detection
         Gamepad prevGamepad1 = new Gamepad();
@@ -80,6 +81,12 @@ public class OldMecanumTelee288 extends LinearOpMode {
                 imu.initialize(imuParams);
             }
 
+            if(!aLastPress && gamepad1.a) useImu = ! useImu;
+            aLastPress = gamepad1.a;
+            telemetry.addData("Field Centered", useImu);
+
+            if(gamepad1.y) mechDrive.resetTicks();
+
             double joystickMovementY = inputScaling(-gamepad1.left_stick_y) * JOYSTICK_MOVEMENT_SENSITIVITY;  // Note: pushing stick forward gives negative value
             double joystickMovementX = inputScaling(gamepad1.left_stick_x) * JOYSTICK_MOVEMENT_SENSITIVITY;
             double yaw = (inputScaling(gamepad1.right_stick_x) * JOYSTICK_ROTATION_SENSITIVITY) * 0.75;
@@ -88,7 +95,7 @@ public class OldMecanumTelee288 extends LinearOpMode {
             double robotHeading = imu.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
 
             //input movement values into vector translation in 2d theorem
-            double theta = -robotHeading;
+            double theta = useImu ? -robotHeading : 0;
             double movementX = joystickMovementX * cos(toRadians(theta)) - joystickMovementY * sin(toRadians(theta));
             double movementY = joystickMovementX * sin(toRadians(theta)) + joystickMovementY * cos(toRadians(theta));
 
@@ -138,10 +145,10 @@ public class OldMecanumTelee288 extends LinearOpMode {
             }
             if (currentGamepad2.x && !prevGamepad2.x) {
                 robotScoring.upperClawToggle();
-            }
+            }/*
             if (currentGamepad1.x && !prevGamepad2.x) {
-                robotScoring.elevatorScore();
-            }
+                robotScoring.elevatorScore();// TODO: what should this do?
+            }*/
             if (currentGamepad2.dpad_down && !prevGamepad2.dpad_down) {
                 robotScoring.pickupStageOne();
             }

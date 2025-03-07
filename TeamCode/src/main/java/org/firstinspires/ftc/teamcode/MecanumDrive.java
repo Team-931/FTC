@@ -30,6 +30,7 @@ import com.acmerobotics.roadrunner.ftc.LynxFirmware;
 import com.acmerobotics.roadrunner.ftc.OverflowEncoder;
 import com.acmerobotics.roadrunner.ftc.PositionVelocityPair;
 import com.acmerobotics.roadrunner.ftc.RawEncoder;
+import com.acmerobotics.roadrunner.ftc.SparkFunOTOSCorrected;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -40,6 +41,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.messages.DriveCommandMessage;
 import org.firstinspires.ftc.teamcode.messages.MecanumCommandMessage;
@@ -63,28 +65,28 @@ public class MecanumDrive {
                 RevHubOrientationOnRobot.UsbFacingDirection.UP;
 
         // drive model parameters
-        public double inPerTick = 1; // If you're using OTOS/Pinpoint leave this at 1 (all values will be in inches, 1 tick = 1 inch)
-        public double lateralInPerTick = 0.2; // Tune this with LateralRampLogger (even if you use OTOS/Pinpoint)
+        public double inPerTick = .042; // If you're using OTOS/Pinpoint leave this at 1 (all values will be in inches, 1 tick = 1 inch)
+        public double lateralInPerTick = 0.033; // Tune this with LateralRampLogger (even if you use OTOS/Pinpoint)
         public double trackWidthTicks = 13.2;
 
         // feedforward parameters (in tick units)
-        public double kS = 1.8798;
-        public double kV = 0.0996;
+        public double kS = 4;
+        public double kV = .02;//0.0996;
         public double kA = 0.0005; // Not sure if this is enough to be doing anything
 
         // path profile parameters (in inches)
-        public double maxWheelVel = 65;
-        public double minProfileAccel = -15;
-        public double maxProfileAccel = 15;
+        public double maxWheelVel = 40;
+        public double minProfileAccel = -500;
+        public double maxProfileAccel = 500;
 
         // turn profile parameters (in radians)
         public double maxAngVel = Math.PI; // shared with path
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double axialGain = 4.5;
-        public double lateralGain = 2.5 * (axialGain / 3.75); // PIH: Feb. 12
-        public double headingGain = 1.1; // shared with turn
+        public double axialGain = 40;
+        public double lateralGain = 80; //
+        public double headingGain = .55; // shared with turn
 
         public double axialVelGain = 0.1;
         public double lateralVelGain = 2.5 * (axialVelGain / 3.75); // PIH: Feb. 12
@@ -122,9 +124,14 @@ public class MecanumDrive {
     private final DownsampledWriter driveCommandWriter = new DownsampledWriter("DRIVE_COMMAND", 50_000_000);
     private final DownsampledWriter mecanumCommandWriter = new DownsampledWriter("MECANUM_COMMAND", 50_000_000);
 
+    public static boolean useImu = true, useOTOSImu = false;
+
+    public SparkFunOTOSCorrected otos;
+    static final YawPitchRollAngles dummyYaw = new YawPitchRollAngles(AngleUnit.RADIANS,0,0, 0, 0);
     public class DriveLocalizer implements Localizer {
         public final Encoder leftFront, leftBack, rightBack, rightFront;
         public final IMU imu;
+
 
         private double lastLeftFrontPos, lastLeftBackPos, lastRightBackPos, lastRightFrontPos;
         private Rotation2d lastHeading;
@@ -137,6 +144,11 @@ public class MecanumDrive {
             rightFront = new OverflowEncoder(new RawEncoder(MecanumDrive.this.rightFront));
 
             imu = lazyImu.get();
+            if(useOTOSImu) {otos.calibrateImu();
+            otos.setLinearUnit(DistanceUnit.INCH);
+            otos.setAngularUnit(AngleUnit.RADIANS);
+
+            otos.setOffset(SparkFunOTOSDrive.PARAMS.offset);}
 
             // TODO: reverse encoders if needed
             //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -149,12 +161,12 @@ public class MecanumDrive {
             PositionVelocityPair rightBackPosVel = rightBack.getPositionAndVelocity();
             PositionVelocityPair rightFrontPosVel = rightFront.getPositionAndVelocity();
 
-            YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
+            YawPitchRollAngles angles = useOTOSImu ? dummyYaw : imu.getRobotYawPitchRollAngles();
 
             FlightRecorder.write("MECANUM_LOCALIZER_INPUTS", new MecanumLocalizerInputsMessage(
                     leftFrontPosVel, leftBackPosVel, rightBackPosVel, rightFrontPosVel, angles));
 
-            Rotation2d heading = Rotation2d.exp(angles.getYaw(AngleUnit.RADIANS));
+            Rotation2d heading = Rotation2d.exp(useImu ? angles.getYaw(AngleUnit.RADIANS) : Math.toRadians(90));
 
             if (!initialized) {
                 initialized = true;
@@ -208,7 +220,7 @@ public class MecanumDrive {
 
     public MecanumDrive(HardwareMap hardwareMap, Pose2d pose) {
         this.pose = pose;
-
+        if(useOTOSImu) otos = hardwareMap.get(SparkFunOTOSCorrected .class,"SparkFunOTOS Corrected");
         LynxFirmware.throwIfModulesAreOutdated(hardwareMap);
 
         for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
@@ -219,13 +231,19 @@ public class MecanumDrive {
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
         leftFront = hardwareMap.get(DcMotorEx.class, "frontLeftDriveMotor");
         leftBack = hardwareMap.get(DcMotorEx.class, "backLeftDriveMotor");
-        rightBack = hardwareMap.get(DcMotorEx.class, "frontRightDriveMotor");
-        rightFront = hardwareMap.get(DcMotorEx.class, "backRightDriveMotor");
-
-        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBack = hardwareMap.get(DcMotorEx.class, "backRightDriveMotor");
+        rightFront = hardwareMap.get(DcMotorEx.class, "frontRightDriveMotor");
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+DcMotor.ZeroPowerBehavior brk =
+        DcMotor.ZeroPowerBehavior.BRAKE;
+        //  DcMotor.ZeroPowerBehavior.FLOAT;
+        leftFront.setZeroPowerBehavior(brk);
+        leftBack.setZeroPowerBehavior(brk);
+        rightBack.setZeroPowerBehavior(brk);
+        rightFront.setZeroPowerBehavior(brk);
 
         // TODO: reverse motor directions if needed
         //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -445,7 +463,13 @@ public class MecanumDrive {
 
     public PoseVelocity2d updatePoseEstimate() {
         Twist2dDual<Time> twist = localizer.update();
-        pose = pose.plus(twist.value());
+        Twist2d val0 = twist.value(), val;
+        if (useOTOSImu) {
+            SparkFunOTOSCorrected.Pose2D vel =  otos.getVelocity();
+            val = new Twist2d(val0.line, vel.h);
+        }
+        else val = val0;
+        pose = pose.plus(val);
 
         poseHistory.add(pose);
         while (poseHistory.size() > 100) {
