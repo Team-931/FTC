@@ -170,8 +170,8 @@ public class DriveByTime extends LinearOpMode {
             if (runtime.seconds()>14.0 && runtime.seconds()<17.5){//drive for 2 seconds to bar
                 robotScoring.upperClawPosition(0);
                 robotScoring.drive(-0.25, 0.0, 0.0, 0.0, false);
-                y_direct = -0.65;
-                x_direct = 0.85;
+                y_direct = -.75;
+                x_direct = .85;
                 mechDrive.drive(leftFrontPower, rightFrontPower, leftBackPower, rightBackPower);
             }
             if (runtime.seconds()>17.5 && runtime.seconds()<18.0) {
